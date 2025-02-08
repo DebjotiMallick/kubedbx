@@ -1,0 +1,17 @@
+mongodb:
+  - hostname: talktocorpus-mongodb001-tls-1363
+    namespace: talktocorpus
+    tlsSecret: talktocorpus-mongodb-tls
+    database: [] # Empty array for all databases, or list specific DBs
+  # ... other MongoDB databases
+mysql:
+  - hostname: aa-cc-mysql001-982
+    namespace: aa-corpus-curator-dev
+    database: [database1, database2] # List specific databases, or [] for all
+  # ... other MySQL databases
+postgresql:
+  - hostname: pgsql-postgresql
+    namespace: talktocorpus
+    database: [] # Empty array for all databases
+  # ... other PostgreSQL databases
+# ... other database types

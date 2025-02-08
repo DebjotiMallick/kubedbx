@@ -1,0 +1,107 @@
+env: "dev"  # can be dev, uat, prod
+
+# COS configuration
+cos:
+  enabled: true
+  env:
+    - name: IBM_COS_ENDPOINT
+      value: https://s3.us-south.cloud-object-storage.appdomain.cloud
+    - name: IBM_COS_API_KEY
+      valueFrom:
+        secretKeyRef:
+          name: ibm-cos-creds
+          key: api-key
+    - name: IBM_COS_INSTANCE_ID
+      valueFrom:
+        secretKeyRef:
+          name: ibm-cos-creds
+          key: instance-id
+
+# Slack configurations
+slack:
+  enabled: true
+  env:
+    - name: SLACK_WEBHOOK_URL
+      valueFrom:
+        secretKeyRef:
+          name: slack-creds
+          key: webhook-url
+
+# Database configurations
+databases:
+  mongodb:
+    enabled: true
+    schedule: "0 1 * * *"
+    env:
+      - name: DB_TYPE
+        value: mysql
+      - name: DB_HOST
+        value: mysql-host
+      - name: DB_USER
+        valueFrom:
+          secretKeyRef:
+            name: mysql-creds
+            key: username
+      - name: DB_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: mysql-creds
+            key: password
+
+  postgresql:
+    enabled: true
+    schedule: "0 2 * * *" 
+    env:
+      - name: DB_TYPE
+        value: postgresql
+      - name: DB_HOST
+        value: postgres-host
+      - name: DB_USER
+        valueFrom:
+          secretKeyRef:
+            name: postgres-creds
+            key: username
+      - name: DB_PASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: postgres-creds
+            key: password
+
+# Persistence configuration
+persistence:
+  storageClass: "ibmc-block-silver"
+  size: 200Gi
+
+# Service Account configuration
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+# RBAC configuration
+rbac:
+  create: true
+  clusterRole: true
+
+# Image configuration
+image:
+  repository: de.icr.io/common/dbbackup
+  tag: latest
+  pullPolicy: IfNotPresent
+  pullSecrets:
+  - name: boomerang.registrykey
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# Job configuration
+concurrencyPolicy: Forbid
+successfulJobsHistoryLimit: 3
+failedJobsHistoryLimit: 1

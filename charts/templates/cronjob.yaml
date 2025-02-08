@@ -1,0 +1,61 @@
+{{- range $dbType, $db := .Values.databases }}
+{{- if $db.enabled }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ include "database-backup.fullname" $ }}-{{ $dbType }}
+  labels:
+    {{- include "database-backup.labels" $ | nindent 4 }}
+    database-type: {{ $dbType }}
+spec:
+  schedule: {{ $db.schedule | quote }}
+  concurrencyPolicy: {{ $.Values.concurrencyPolicy }}
+  successfulJobsHistoryLimit: {{ $.Values.successfulJobsHistoryLimit }}
+  failedJobsHistoryLimit: {{ $.Values.failedJobsHistoryLimit }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: {{ include "database-backup.serviceAccountName" $ }}
+          containers:
+          - name: backup
+            image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+            imagePullPolicy: {{ $.Values.image.pullPolicy }}
+            {{- with $.Values.image.pullSecrets }}
+            imagePullSecrets:
+              {{- toYaml . | nindent 12 }}
+            {{- end }}
+            args: ["-config", "/configs/{{ $.Values.env }}.yaml"]
+            env:
+            {{- if $db.env }}
+            {{- toYaml $db.env | nindent 12 }}
+            {{- end }}
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backups/{{ $dbType }}
+              subPath: {{ $dbType }}
+            - name: backup-storage
+              mountPath: "/logs/{{ $dbType }}"
+              subPath: {{ $dbType }}
+            - name: backup-configs
+              mountPath: /configs
+            - name: backup-scripts
+              mountPath: "/scripts"
+              readOnly: true
+            resources:
+              {{- toYaml $.Values.resources | nindent 14 }}
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: {{ include "database-backup.fullname" $ }}-storage
+          - name: backup-configs
+            configMap:
+              name: {{ include "database-backup.fullname" $ }}-config
+          - name: backup-scripts
+            configMap:
+              name: {{ include "database-backup.fullname" $ }}-scripts
+              defaultMode: 0755
+          restartPolicy: OnFailure
+{{- end }}
+{{- end }}
